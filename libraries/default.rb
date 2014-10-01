@@ -17,11 +17,12 @@
 #
 
 class Citadel
-  attr_reader :bucket, :access_key_id, :secret_access_key, :token
+  attr_reader :bucket, :access_key_id, :secret_access_key, :token, :encryption_key
 
   def initialize(node, bucket=nil)
     @node = node
     @bucket = bucket || node['citadel']['bucket']
+    @encryption_key = node['citadel']['encryption_key']
 
     if node['citadel']['access_key_id']
       # Manually specified credentials
@@ -41,7 +42,12 @@ class Citadel
 
   def [](key)
     Chef::Log.debug("citadel: Retrieving #{@bucket}/#{key}")
-    Citadel::S3.get(@bucket, key, @access_key_id, @secret_access_key, @token).to_s
+    contents = Citadel::S3.get(@bucket, key, @access_key_id, @secret_access_key, @token).to_s
+    if @encryption_key
+      contents = Citadel::Decrypt.new(contents, @encryption_key)
+    end
+
+    return contents
   end
 
   # Helper module for the DSL extension
@@ -66,4 +72,3 @@ class Chef
     include Citadel::ChefDSL
   end
 end
-
