@@ -15,7 +15,7 @@ class Citadel
 
         return cipher.update(Base64.decode64(encrypted)) + cipher.final
       rescue Exception => e
-        raise CitadelError, "Unable to decrypt: #{e}"
+        raise CitadelError, e
       end
     end
 

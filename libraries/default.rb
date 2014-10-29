@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+require 'digest'
 
 class Citadel
   attr_reader :bucket, :access_key_id, :secret_access_key, :token, :encryption_key
@@ -44,7 +45,12 @@ class Citadel
     Chef::Log.debug("citadel: Retrieving #{@bucket}/#{key}")
     contents = Citadel::S3.get(@bucket, key, @access_key_id, @secret_access_key, @token).to_s
     if @encryption_key
-      contents = Citadel::Decrypt.new(contents, @encryption_key)
+      begin
+        contents = Citadel::Decrypt.new(contents, @encryption_key)
+      rescue CitadelError => e
+        md5_key = Digest::MD5.new.digest @encryption_key
+        raise CitadelError, "Failed to decrypt S3 key #{key} (using encryption key with an MD5 starting with #{md5_key[0,6]}): #{e}"
+      end
     end
 
     return contents
