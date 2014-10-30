@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 require 'digest'
+require 'base64'
 
 class Citadel
   attr_reader :bucket, :access_key_id, :secret_access_key, :token, :encryption_key
@@ -48,7 +49,7 @@ class Citadel
       begin
         contents = Citadel::Decrypt.new(contents, @encryption_key)
       rescue CitadelError => e
-        md5_key = Digest::MD5.new.digest @encryption_key
+        md5_key = Base64.encode64(Digest::MD5.new.digest(@encryption_key))
         raise CitadelError, "Failed to decrypt S3 key #{key} (using encryption key with an MD5 starting with #{md5_key[0,6]}): #{e}"
       end
     end
